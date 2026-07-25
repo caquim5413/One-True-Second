@@ -11,6 +11,7 @@
     <!-- Para que se vea bien al añadirla a la pantalla de inicio en iPhone -->
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="One True Second">
 
@@ -36,11 +37,14 @@
       <textarea id="day-text" placeholder="Escribe aquí..."></textarea>
     </div>
 
-    <script src="https://accounts.google.com/gsi/client" async onload="initGoogleClient()"></script>
-
     <script src="google.js"></script>
     <script src="script.js"></script>
     <script src="drive.js"></script>
+
+    <!-- Este script va el ÚLTIMO a propósito: así garantizamos que
+         google.js, script.js y drive.js ya se han cargado del todo
+         antes de que dispare su aviso "onload" -->
+    <script src="https://accounts.google.com/gsi/client" async onload="initGoogleClient()"></script>
 
     <script>
         // Registra el service worker para que la app sea instalable

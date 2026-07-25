@@ -58,15 +58,15 @@ function clearStoredToken() {
 
 async function connectDrive(token) {
 
-    accessToken = token;
-    drive.setAccessToken(token);
-
     const loginButton = document.getElementById("google-login");
     const logoutButton = document.getElementById("google-logout");
 
     loginButton.textContent = "Conectando con Drive...";
 
     try {
+
+        accessToken = token;
+        drive.setAccessToken(token);
 
         await drive.init();
 
