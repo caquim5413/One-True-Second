@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>One True Second</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1d6879">
+
+    <!-- Para que se vea bien al añadirla a la pantalla de inicio en iPhone -->
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="One True Second">
+
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+   
+    <div id="grid-view">
+      <h1>One True Second</h1>
+        <button id="google-login">Iniciar sesión con Google</button>
+      <p>MegaProyecto de Investigación y cotilleo interpersonal y de financiación por caridad</p>
+      <div class="grid"></div>
+    </div>
+
+    <div id="day-view" style="display: none;">
+      <button id="back">Volver</button>
+      <h2 id="day-title"></h2>
+
+      <input type="file" id="image-input" accept="image/*">
+      <div id="image-gallery"></div>
+
+      <textarea id="day-text" placeholder="Escribe aquí..."></textarea>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async onload="initGoogleClient()"></script>
+
+    <script src="google.js"></script>
+    <script src="script.js"></script>
+    <script src="drive.js"></script>
+
+    <script>
+        // Registra el service worker para que la app sea instalable
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker
+                    .register("service-worker.js")
+                    .catch((err) => console.error("Service worker falló:", err));
+            });
+        }
+    </script>
+  </body>
+</html>
+
+
