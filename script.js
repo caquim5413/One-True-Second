@@ -5,6 +5,7 @@ const gridView = document.getElementById("grid-view");
 const dayView = document.getElementById("day-view");
 
 const dayTitle = document.getElementById("day-title");
+const saveStatusEl = document.getElementById("save-status");
 const dayText = document.getElementById("day-text");
 const dayTagsInput = document.getElementById("day-tags");
 
@@ -18,6 +19,8 @@ const searchBtn = document.getElementById("search-btn");
 const searchPanel = document.getElementById("search-panel");
 const searchInput = document.getElementById("search-input");
 const searchResults = document.getElementById("search-results");
+
+const exportBackupBtn = document.getElementById("export-backup-btn");
 
 // -------------------- FECHAS
 
@@ -204,6 +207,7 @@ async function openDay(dateKey, day, month, year, dayDiv) {
     dayTagsInput.disabled = true;
     imageInput.disabled = true;
     imageGallery.innerHTML = "";
+    setSaveStatus("", "");
 
     let dayData;
 
@@ -297,6 +301,8 @@ async function deletePhoto(photoId) {
 
     if (!confirmado) return;
 
+    setSaveStatus("saving", "Eliminando foto...");
+
     try {
 
         await drive.deletePhoto(photoId);
@@ -310,8 +316,11 @@ async function deletePhoto(photoId) {
         await renderGallery();
         await updateDayCellPreview();
 
+        setSaveStatus("saved", "Foto eliminada ✓");
+
     } catch (err) {
         console.error(err);
+        setSaveStatus("error", "No se pudo eliminar la foto.");
         alert("No se pudo eliminar la foto. Revisa la consola.");
     }
 
@@ -346,6 +355,100 @@ async function updateDayCellPreview() {
         activeDayDiv.textContent = activeDayDiv.dataset.label || "";
 
     }
+
+}
+
+// -------------------- INDICADOR DE GUARDADO
+
+let saveStatusClearTimeout = null;
+
+function setSaveStatus(state, message) {
+
+    if (!saveStatusEl) return;
+
+    clearTimeout(saveStatusClearTimeout);
+
+    saveStatusEl.textContent = message;
+    saveStatusEl.className = state || "";
+
+    if (state === "saved") {
+
+        saveStatusClearTimeout = setTimeout(() => {
+            saveStatusEl.textContent = "";
+            saveStatusEl.className = "";
+        }, 2000);
+
+    }
+
+}
+
+// -------------------- COMPRIMIR FOTOS ANTES DE SUBIR
+// Reducimos el tamaño de la imagen antes de mandarla a Drive: así
+// las subidas van más rápido y ocupan mucho menos espacio, sin que
+// se note la diferencia al verla en el móvil.
+
+function resizeImageFile(file, maxDimension = 2000, quality = 0.85) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+
+            const img = new Image();
+
+            img.onload = () => {
+
+                let { width, height } = img;
+
+                if (width > maxDimension || height > maxDimension) {
+
+                    if (width > height) {
+                        height = Math.round(height * (maxDimension / width));
+                        width = maxDimension;
+                    } else {
+                        width = Math.round(width * (maxDimension / height));
+                        height = maxDimension;
+                    }
+
+                }
+
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+
+                canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+
+                    if (!blob) {
+                        reject(new Error("No se pudo comprimir la imagen."));
+                        return;
+                    }
+
+                    const compressedFile = new File(
+                        [blob],
+                        file.name.replace(/\.\w+$/, "") + ".jpg",
+                        { type: "image/jpeg" }
+                    );
+
+                    resolve(compressedFile);
+
+                }, "image/jpeg", quality);
+
+            };
+
+            img.onerror = () => reject(new Error("No se pudo leer la imagen."));
+
+            img.src = reader.result;
+
+        };
+
+        reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+
+        reader.readAsDataURL(file);
+
+    });
 
 }
 
@@ -487,6 +590,8 @@ dayText.addEventListener("input", () => {
 
     activeDayData.text = dayText.value;
 
+    setSaveStatus("saving", "Guardando...");
+
     clearTimeout(saveTextTimeout);
 
     saveTextTimeout = setTimeout(async () => {
@@ -494,8 +599,10 @@ dayText.addEventListener("input", () => {
         try {
             await drive.saveDay(activeDateKey, activeDayData);
             activeDayDiv.classList.add("has-entry");
+            setSaveStatus("saved", "Guardado ✓");
         } catch (err) {
             console.error(err);
+            setSaveStatus("error", "Error al guardar. Se reintentará al seguir escribiendo.");
         }
 
     }, 800);
@@ -512,6 +619,8 @@ dayTagsInput.addEventListener("input", () => {
 
     activeDayData.tags = parseTags(dayTagsInput.value);
 
+    setSaveStatus("saving", "Guardando...");
+
     clearTimeout(saveTagsTimeout);
 
     saveTagsTimeout = setTimeout(async () => {
@@ -520,8 +629,10 @@ dayTagsInput.addEventListener("input", () => {
             await drive.saveDay(activeDateKey, activeDayData);
             activeDayDiv.classList.add("has-entry");
             indexTags(activeDateKey, activeDayData.tags);
+            setSaveStatus("saved", "Guardado ✓");
         } catch (err) {
             console.error(err);
+            setSaveStatus("error", "Error al guardar. Se reintentará al seguir escribiendo.");
         }
 
     }, 800);
@@ -530,51 +641,65 @@ dayTagsInput.addEventListener("input", () => {
 
 // -------------------- SUBIR IMAGEN
 
-imageInput.addEventListener("change", () => {
+imageInput.addEventListener("change", async () => {
 
     const file = imageInput.files[0];
 
     if (!file || !activeDateKey) return;
 
-    // Vista previa inmediata mientras se sube a Drive
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-
-        const previewImg = document.createElement("img");
-        previewImg.src = reader.result;
-        previewImg.className = "day-photo";
-        imageGallery.appendChild(previewImg);
-
-        activeDayDiv.style.backgroundImage = `url(${reader.result})`;
-        activeDayDiv.style.backgroundSize = "cover";
-        activeDayDiv.style.backgroundPosition = "center";
-        activeDayDiv.textContent = "";
-        activeDayDiv.classList.add("has-image");
-
-        try {
-
-            const uploaded = await drive.uploadPhoto(file);
-
-            activeDayData.photos.push({
-                id: uploaded.id,
-                name: uploaded.name
-            });
-
-            await drive.saveDay(activeDateKey, activeDayData);
-
-            activeDayDiv.classList.add("has-entry");
-
-        } catch (err) {
-            console.error(err);
-            alert("No se pudo subir la foto a Drive. Revisa la consola.");
-        }
-
-    };
-
-    reader.readAsDataURL(file);
-
     imageInput.value = "";
+
+    setSaveStatus("saving", "Comprimiendo foto...");
+
+    let compressedFile;
+
+    try {
+        compressedFile = await resizeImageFile(file);
+    } catch (err) {
+        console.error(err);
+        setSaveStatus("error", "No se pudo procesar la foto.");
+        alert("No se pudo procesar la foto. Revisa la consola.");
+        return;
+    }
+
+    // Vista previa inmediata mientras se sube a Drive
+    const previewUrl = URL.createObjectURL(compressedFile);
+
+    const previewImg = document.createElement("img");
+    previewImg.src = previewUrl;
+    previewImg.className = "day-photo";
+    imageGallery.appendChild(previewImg);
+
+    activeDayDiv.style.backgroundImage = `url(${previewUrl})`;
+    activeDayDiv.style.backgroundSize = "cover";
+    activeDayDiv.style.backgroundPosition = "center";
+    activeDayDiv.textContent = "";
+    activeDayDiv.classList.add("has-image");
+
+    setSaveStatus("saving", "Subiendo foto...");
+
+    try {
+
+        const uploaded = await drive.uploadPhoto(compressedFile);
+
+        activeDayData.photos.push({
+            id: uploaded.id,
+            name: uploaded.name
+        });
+
+        await drive.saveDay(activeDateKey, activeDayData);
+
+        activeDayDiv.classList.add("has-entry");
+
+        await renderGallery();
+
+        setSaveStatus("saved", "Foto guardada ✓");
+
+    } catch (err) {
+        console.error(err);
+        setSaveStatus("error", "No se pudo subir la foto.");
+        alert("No se pudo subir la foto a Drive. Revisa la consola.");
+    }
 
 });
 
@@ -694,5 +819,137 @@ function renderSearchResults(query) {
         searchResults.appendChild(row);
 
     });
+
+}
+
+// -------------------- COPIA DE SEGURIDAD (.zip)
+
+exportBackupBtn.addEventListener("click", exportBackup);
+
+async function exportBackup() {
+
+    if (!driveReady) {
+        alert("Primero tienes que iniciar sesión con Google.");
+        return;
+    }
+
+    const confirmado = confirm(
+        "Vamos a preparar un archivo .zip con todos tus textos y fotos. " +
+        "Si tienes muchas fotos, puede tardar un rato. ¿Continuar?"
+    );
+
+    if (!confirmado) return;
+
+    const originalLabel = exportBackupBtn.textContent;
+
+    exportBackupBtn.disabled = true;
+    exportBackupBtn.textContent = "Preparando copia...";
+
+    try {
+
+        const zip = new JSZip();
+        const allEntries = {};
+
+        const years = [];
+
+        for (let y = startDate.getFullYear(); y <= today.getFullYear(); y++) {
+            years.push(y);
+        }
+
+        for (const year of years) {
+
+            let dates;
+
+            try {
+                dates = await drive.listDatesInYear(year);
+            } catch (err) {
+                console.error(`No se pudieron listar los días de ${year}`, err);
+                continue;
+            }
+
+            for (const dateKey of dates) {
+
+                exportBackupBtn.textContent = `Descargando ${dateKey}...`;
+
+                let dayData;
+
+                try {
+                    dayData = dayDataCache[dateKey] || await drive.loadDay(dateKey);
+                } catch (err) {
+                    console.error(`No se pudo leer ${dateKey}`, err);
+                    continue;
+                }
+
+                allEntries[dateKey] = {
+                    text: dayData.text || "",
+                    tags: dayData.tags || []
+                };
+
+                const photos = dayData.photos || [];
+
+                for (let i = 0; i < photos.length; i++) {
+
+                    const photo = photos[i];
+
+                    try {
+
+                        const blobUrl = await drive.getPhotoBlobUrl(photo.id);
+                        const response = await fetch(blobUrl);
+                        const blob = await response.blob();
+
+                        const extensionMatch = photo.name.match(/\.\w+$/);
+                        const extension = extensionMatch ? extensionMatch[0] : ".jpg";
+
+                        const suffix = photos.length > 1 ? `-${i + 1}` : "";
+                        const fileName = `${dateKey}${suffix}${extension}`;
+
+                        zip.file(`fotos/${fileName}`, blob);
+
+                        URL.revokeObjectURL(blobUrl);
+
+                    } catch (err) {
+                        console.error(`No se pudo descargar la foto de ${dateKey}`, err);
+                    }
+
+                }
+
+            }
+
+        }
+
+        zip.file("entradas.json", JSON.stringify(allEntries, null, 2));
+
+        exportBackupBtn.textContent = "Generando archivo .zip...";
+
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+
+        const url = URL.createObjectURL(zipBlob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `one-true-second-backup-${todayKey}.zip`;
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+
+        exportBackupBtn.textContent = "Copia descargada ✓";
+
+        setTimeout(() => {
+            exportBackupBtn.textContent = originalLabel;
+            exportBackupBtn.disabled = false;
+        }, 3000);
+
+    } catch (err) {
+
+        console.error(err);
+        alert("No se pudo generar la copia de seguridad. Revisa la consola.");
+
+        exportBackupBtn.textContent = originalLabel;
+        exportBackupBtn.disabled = false;
+
+    }
 
 }

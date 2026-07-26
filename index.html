@@ -43,6 +43,7 @@
 
         <div id="profile-menu" style="display:none;">
           <span id="profile-name"></span>
+          <button id="export-backup-btn">Descargar copia de seguridad</button>
           <button id="google-logout">Cerrar sesión</button>
         </div>
 
@@ -64,6 +65,7 @@
     <div id="day-view" style="display: none;">
       <button id="back">Volver</button>
       <h2 id="day-title"></h2>
+      <div id="save-status"></div>
 
       <input type="file" id="image-input" accept="image/*">
       <div id="image-gallery"></div>
@@ -72,6 +74,9 @@
 
       <textarea id="day-text" placeholder="Escribe aquí..."></textarea>
     </div>
+
+    <!-- Librería para poder generar el .zip de la copia de seguridad -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script src="google.js"></script>
     <script src="script.js"></script>

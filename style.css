@@ -341,3 +341,26 @@ padding: 10px;
   border-radius: 6px;
   margin: 10px 0;
 }
+
+/* -------------------- INDICADOR DE GUARDADO -------------------- */
+
+#save-status {
+  font-size: 13px;
+  min-height: 18px;
+  margin: 2px 0 10px 0;
+  color: #888;
+  transition: color 0.2s;
+}
+
+#save-status.saving { color: #b58a00; }
+#save-status.saved { color: #2f8f4e; }
+#save-status.error { color: #b23b3b; }
+
+/* -------------------- COPIA DE SEGURIDAD -------------------- */
+
+#profile-menu #export-backup-btn {
+  align-self: stretch;
+  background: #FFFBED;
+  border: 1px solid #ccc;
+  color: #3b3a3f;
+}
