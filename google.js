@@ -1,15 +1,18 @@
 const CLIENT_ID =
 "373825108562-1aadhtifvjtu4bj5qstqm88li80umag7.apps.googleusercontent.com";
 
+// Añadimos el scope de perfil para poder mostrar la foto y el nombre
 const SCOPES =
-"https://www.googleapis.com/auth/drive.file";
+"https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile";
 
 const TOKEN_STORAGE_KEY = "ots_google_token";
 const HAS_LOGGED_IN_KEY = "ots_has_logged_in";
+const PROFILE_STORAGE_KEY = "ots_profile";
 
 let tokenClient;
 let accessToken = null;
 let renewTimer = null;
+let isLoggedIn = false;
 
 // ---------- Guardar / leer / borrar el token en el navegador ----------
 
@@ -58,17 +61,68 @@ function clearStoredToken() {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
+// ---------- Perfil (nombre y foto) ----------
+
+async function fetchAndShowProfile(token) {
+
+    try {
+
+        const response = await fetch(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!response.ok) throw new Error("No se pudo obtener el perfil.");
+
+        const profile = await response.json();
+
+        localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+        showProfileUI(profile);
+
+    } catch (err) {
+        console.error("No se pudo cargar el perfil:", err);
+    }
+
+}
+
+function showProfileUI(profile) {
+
+    const avatar = document.getElementById("profile-avatar");
+    const placeholder = document.getElementById("profile-placeholder");
+    const nameLabel = document.getElementById("profile-name");
+
+    if (profile?.picture) {
+        avatar.src = profile.picture;
+        avatar.style.display = "block";
+        placeholder.style.display = "none";
+    }
+
+    if (profile?.name) {
+        nameLabel.textContent = profile.name;
+    }
+
+}
+
+function resetProfileUI() {
+
+    const avatar = document.getElementById("profile-avatar");
+    const placeholder = document.getElementById("profile-placeholder");
+    const nameLabel = document.getElementById("profile-name");
+
+    avatar.style.display = "none";
+    avatar.src = "";
+    placeholder.style.display = "block";
+    nameLabel.textContent = "";
+
+}
+
 // ---------- Renovación automática y silenciosa ----------
-// Un poco antes de que el token caduque (dura ~1 hora), pedimos uno
-// nuevo en silencio, sin que el usuario vea ni haga nada. Mientras la
-// pestaña siga abierta y la sesión de Google siga activa, esto hace
-// que en la práctica no haga falta volver a iniciar sesión nunca.
 
 function scheduleRenewal(expiresInSeconds) {
 
     clearTimeout(renewTimer);
 
-    // Renovamos 5 minutos antes de que caduque de verdad
     const renewInMs = Math.max((expiresInSeconds - 300) * 1000, 10000);
 
     renewTimer = setTimeout(() => {
@@ -85,11 +139,6 @@ function scheduleRenewal(expiresInSeconds) {
 
 async function connectDrive(token) {
 
-    const loginButton = document.getElementById("google-login");
-    const logoutButton = document.getElementById("google-logout");
-
-    loginButton.textContent = "Conectando con Drive...";
-
     try {
 
         accessToken = token;
@@ -97,8 +146,20 @@ async function connectDrive(token) {
 
         await drive.init();
 
-        loginButton.style.display = "none";
-        logoutButton.style.display = "inline-block";
+        isLoggedIn = true;
+        document.getElementById("profile-btn").classList.add("connected");
+
+        // Si teníamos el perfil guardado de antes, lo mostramos ya
+        // mismo (rápido), y de paso lo refrescamos por si ha cambiado.
+        const cachedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
+
+        if (cachedProfile) {
+            try {
+                showProfileUI(JSON.parse(cachedProfile));
+            } catch {}
+        }
+
+        await fetchAndShowProfile(token);
 
         if (typeof onDriveReady === "function") {
             onDriveReady();
@@ -108,11 +169,10 @@ async function connectDrive(token) {
 
         console.error("No se pudo conectar con Drive:", err);
 
+        isLoggedIn = false;
         clearStoredToken();
-
-        loginButton.textContent = "Iniciar sesión con Google";
-        loginButton.style.display = "inline-block";
-        logoutButton.style.display = "none";
+        resetProfileUI();
+        document.getElementById("profile-btn").classList.remove("connected");
 
     }
 
@@ -130,12 +190,8 @@ function initGoogleClient() {
 
         callback: async (response) => {
 
-            // Una renovación silenciosa puede fallar (por ejemplo, si
-            // el usuario cerró sesión de Google del todo). En ese caso
-            // simplemente dejamos el botón de "Iniciar sesión" normal,
-            // sin molestar con una alerta.
             if (response.error) {
-                console.warn("No se pudo renovar la sesión en silencio:", response.error);
+                console.warn("No se pudo iniciar/renovar la sesión:", response.error);
                 return;
             }
 
@@ -156,7 +212,6 @@ function initGoogleClient() {
 
     if (stored) {
 
-        // Sesión guardada y todavía válida: entramos directo
         connectDrive(stored);
 
         const record = readTokenRecord();
@@ -166,19 +221,40 @@ function initGoogleClient() {
 
     } else if (localStorage.getItem(HAS_LOGGED_IN_KEY)) {
 
-        // Ya habíamos iniciado sesión antes en este navegador:
-        // intentamos renovar en silencio, sin pedir clic.
         tokenClient.requestAccessToken({ prompt: "" });
 
     }
 
 }
 
+// ---------- Botón de perfil (entrar / menú de salir) ----------
+
+function toggleProfileMenu(forceState) {
+
+    const menu = document.getElementById("profile-menu");
+
+    const show = forceState !== undefined
+        ? forceState
+        : menu.style.display === "none";
+
+    menu.style.display = show ? "flex" : "none";
+
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
     document
-        .getElementById("google-login")
-        .addEventListener("click", () => {
+        .getElementById("profile-btn")
+        .addEventListener("click", (event) => {
+
+            event.stopPropagation();
+
+            if (isLoggedIn) {
+
+                toggleProfileMenu();
+                return;
+
+            }
 
             if (!tokenClient) {
                 alert("Google todavía se está cargando, espera un segundo y vuelve a pulsar.");
@@ -191,6 +267,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         });
 
+    // Cerrar el menú si se pulsa fuera de él
+    document.addEventListener("click", (event) => {
+
+        const menu = document.getElementById("profile-menu");
+        const wrapper = document.getElementById("profile-wrapper");
+
+        if (menu.style.display !== "none" && !wrapper.contains(event.target)) {
+            toggleProfileMenu(false);
+        }
+
+    });
+
     document
         .getElementById("google-logout")
         .addEventListener("click", () => {
@@ -200,6 +288,9 @@ document.addEventListener("DOMContentLoaded", () => {
             clearTimeout(renewTimer);
             clearStoredToken();
             localStorage.removeItem(HAS_LOGGED_IN_KEY);
+            localStorage.removeItem(PROFILE_STORAGE_KEY);
+
+            toggleProfileMenu(false);
 
             if (token && google.accounts?.oauth2?.revoke) {
 

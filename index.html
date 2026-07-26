@@ -19,10 +19,33 @@
   </head>
   <body>
    
+    <div id="toolbar">
+
+      <label for="jump-date-input" id="calendar-btn" title="Ir a un día">
+        📅
+      </label>
+      <input type="date" id="jump-date-input" class="visually-hidden-input">
+
+      <div id="toolbar-title">One True Second</div>
+
+      <div id="profile-wrapper">
+
+        <button id="profile-btn" title="Cuenta">
+          <span id="profile-placeholder">👤</span>
+          <img id="profile-avatar" alt="Tu perfil" style="display:none;">
+        </button>
+
+        <div id="profile-menu" style="display:none;">
+          <span id="profile-name"></span>
+          <button id="google-logout">Cerrar sesión</button>
+        </div>
+
+      </div>
+
+    </div>
+
     <div id="grid-view">
       <h1>One True Second</h1>
-        <button id="google-login">Iniciar sesión con Google</button>
-        <button id="google-logout" style="display:none;">Cerrar sesión</button>
       <p>MegaProyecto de Investigación y cotilleo interpersonal y de financiación por caridad</p>
       <div class="grid"></div>
     </div>

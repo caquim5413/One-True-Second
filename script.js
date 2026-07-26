@@ -11,6 +11,8 @@ const backButton = document.getElementById("back");
 const imageInput = document.getElementById("image-input");
 const imageGallery = document.getElementById("image-gallery");
 
+const jumpDateInput = document.getElementById("jump-date-input");
+
 // -------------------- FECHAS
 
 const startDate = new Date(2025, 0, 1);
@@ -339,6 +341,62 @@ if (dayDivs[todayKey]) {
         behavior: "smooth",
         block: "center"
     });
+
+}
+
+// -------------------- IR A UN DÍA CONCRETO (desde el toolbar)
+
+const startDateKey =
+    `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2,"0")}-${String(startDate.getDate()).padStart(2,"0")}`;
+
+jumpDateInput.min = startDateKey;
+jumpDateInput.max = todayKey;
+
+jumpDateInput.addEventListener("change", () => {
+
+    const value = jumpDateInput.value;
+
+    if (!value) return;
+
+    goToDate(value);
+
+    jumpDateInput.value = "";
+
+});
+
+function goToDate(dateKey) {
+
+    const dayDiv = dayDivs[dateKey];
+
+    if (!dayDiv) {
+
+        alert(
+            "Esa fecha está fuera del diario (entre el "
+            + startDateKey + " y hoy)."
+        );
+
+        return;
+
+    }
+
+    // Si estábamos dentro de un día, volvemos primero al grid
+    dayView.style.display = "none";
+    gridView.style.display = "block";
+
+    activeDateKey = null;
+    activeDayDiv = null;
+    activeDayData = null;
+
+    dayDiv.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+    dayDiv.classList.add("jump-highlight");
+
+    setTimeout(() => {
+        dayDiv.classList.remove("jump-highlight");
+    }, 1500);
 
 }
 

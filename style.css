@@ -1,7 +1,7 @@
 body{
   font-family: sans-serif;
   padding: 20px;
-  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-top: calc(76px + env(safe-area-inset-top));
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
   background: #FFFBED;
 }
@@ -163,3 +163,105 @@ padding: 10px;
 }
 
 
+
+/* -------------------- SALTAR A UN DÍA -------------------- */
+
+.day.jump-highlight {
+  outline: 3px solid #ff8a3d;
+  outline-offset: 2px;
+}
+
+/* -------------------- BARRA DE HERRAMIENTAS -------------------- */
+
+#toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top);
+  background: #1d6879;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+#toolbar-title {
+  font-family: "Rubik";
+  font-weight: bold;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#calendar-btn {
+  font-size: 22px;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 1;
+}
+
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#profile-wrapper {
+  position: relative;
+}
+
+#profile-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.15);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  font-size: 18px;
+}
+
+#profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#profile-menu {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  background: white;
+  color: #3b3a3f;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 10px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 101;
+}
+
+#profile-name {
+  font-size: 14px;
+  font-weight: bold;
+  word-break: break-word;
+}
+
+#profile-menu #google-logout {
+  align-self: stretch;
+}
