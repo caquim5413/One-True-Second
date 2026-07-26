@@ -6,12 +6,18 @@ const dayView = document.getElementById("day-view");
 
 const dayTitle = document.getElementById("day-title");
 const dayText = document.getElementById("day-text");
+const dayTagsInput = document.getElementById("day-tags");
 
 const backButton = document.getElementById("back");
 const imageInput = document.getElementById("image-input");
 const imageGallery = document.getElementById("image-gallery");
 
 const jumpDateInput = document.getElementById("jump-date-input");
+
+const searchBtn = document.getElementById("search-btn");
+const searchPanel = document.getElementById("search-panel");
+const searchInput = document.getElementById("search-input");
+const searchResults = document.getElementById("search-results");
 
 // -------------------- FECHAS
 
@@ -29,6 +35,13 @@ let activeDayData = null; // { text, photos: [{id, name}] } del día abierto
 // dateKey -> elemento del grid, para poder marcarlos luego
 const dayDivs = {};
 
+// dateKey -> datos del día ya cargados (texto, fotos, etiquetas),
+// para no tener que volver a pedirlos a Drive
+const dayDataCache = {};
+
+// etiqueta en minúsculas -> Set de dateKeys que la tienen
+const tagIndex = {};
+
 // -------------------- TEXTOS
 
 const weekDaysShort = [
@@ -44,6 +57,47 @@ const monthNamesLong = [
     "Enero","Febrero","Marzo","Abril","Mayo","Junio",
     "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
 ];
+
+// -------------------- ETIQUETAS: PARSEO, FORMATO E ÍNDICE
+
+function parseTags(raw) {
+
+    return Array.from(
+        new Set(
+            raw
+                .split(/[\s,]+/)
+                .map((t) => t.replace(/^#/, "").trim())
+                .filter((t) => t.length > 0)
+        )
+    );
+
+}
+
+function formatTags(tags) {
+    return (tags || []).map((t) => `#${t}`).join(" ");
+}
+
+function indexTags(dateKey, tags) {
+
+    removeFromTagIndex(dateKey);
+
+    (tags || []).forEach((tag) => {
+
+        const key = tag.toLowerCase();
+
+        if (!tagIndex[key]) tagIndex[key] = new Set();
+
+        tagIndex[key].add(dateKey);
+
+    });
+
+}
+
+function removeFromTagIndex(dateKey) {
+
+    Object.values(tagIndex).forEach((set) => set.delete(dateKey));
+
+}
 
 // -------------------- CUANDO DRIVE YA ESTÁ LISTO
 // (lo llama google.js justo después de iniciar sesión y crear las carpetas)
@@ -98,6 +152,11 @@ async function loadEntryPreview(dateKey) {
 
         const dayData = await drive.loadDay(dateKey);
 
+        dayData.tags = dayData.tags || [];
+
+        dayDataCache[dateKey] = dayData;
+        indexTags(dateKey, dayData.tags);
+
         if (dayData.photos && dayData.photos.length > 0) {
 
             const thumbUrl = await drive.getPhotoThumbnail(
@@ -141,25 +200,43 @@ async function openDay(dateKey, day, month, year, dayDiv) {
 
     dayText.value = "Cargando...";
     dayText.disabled = true;
+    dayTagsInput.value = "";
+    dayTagsInput.disabled = true;
     imageInput.disabled = true;
     imageGallery.innerHTML = "";
 
     let dayData;
 
-    try {
-        dayData = await drive.loadDay(dateKey);
-    } catch (err) {
-        console.error(err);
-        alert("No se pudo cargar este día. Revisa la consola.");
-        dayData = { text: "", photos: [] };
+    if (dayDataCache[dateKey]) {
+
+        dayData = dayDataCache[dateKey];
+
+    } else {
+
+        try {
+            dayData = await drive.loadDay(dateKey);
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo cargar este día. Revisa la consola.");
+            dayData = { text: "", photos: [] };
+        }
+
     }
 
     dayData.photos = dayData.photos || [];
+    dayData.tags = dayData.tags || [];
+
+    dayDataCache[dateKey] = dayData;
+    indexTags(dateKey, dayData.tags);
 
     activeDayData = dayData;
 
     dayText.value = dayData.text || "";
     dayText.disabled = false;
+
+    dayTagsInput.value = formatTags(dayData.tags);
+    dayTagsInput.disabled = false;
+
     imageInput.disabled = false;
     imageInput.value = "";
 
@@ -425,6 +502,32 @@ dayText.addEventListener("input", () => {
 
 });
 
+// -------------------- GUARDAR ETIQUETAS (con el mismo retraso)
+
+let saveTagsTimeout = null;
+
+dayTagsInput.addEventListener("input", () => {
+
+    if (!activeDateKey) return;
+
+    activeDayData.tags = parseTags(dayTagsInput.value);
+
+    clearTimeout(saveTagsTimeout);
+
+    saveTagsTimeout = setTimeout(async () => {
+
+        try {
+            await drive.saveDay(activeDateKey, activeDayData);
+            activeDayDiv.classList.add("has-entry");
+            indexTags(activeDateKey, activeDayData.tags);
+        } catch (err) {
+            console.error(err);
+        }
+
+    }, 800);
+
+});
+
 // -------------------- SUBIR IMAGEN
 
 imageInput.addEventListener("change", () => {
@@ -487,3 +590,109 @@ backButton.addEventListener("click", () => {
     activeDayData = null;
 
 });
+
+// -------------------- BUSCADOR POR ETIQUETA
+
+searchBtn.addEventListener("click", (event) => {
+
+    event.stopPropagation();
+
+    if (!driveReady) {
+        alert("Primero tienes que iniciar sesión con Google.");
+        return;
+    }
+
+    const show = searchPanel.style.display === "none";
+
+    searchPanel.style.display = show ? "block" : "none";
+
+    if (show) {
+        searchInput.value = "";
+        searchResults.innerHTML = "";
+        searchInput.focus();
+    }
+
+});
+
+document.addEventListener("click", (event) => {
+
+    if (
+        searchPanel.style.display !== "none" &&
+        !searchPanel.contains(event.target) &&
+        event.target !== searchBtn
+    ) {
+        searchPanel.style.display = "none";
+    }
+
+});
+
+searchInput.addEventListener("input", () => {
+    renderSearchResults(searchInput.value.trim().toLowerCase());
+});
+
+function renderSearchResults(query) {
+
+    searchResults.innerHTML = "";
+
+    if (!query) return;
+
+    const cleanQuery = query.replace(/^#/, "");
+
+    const matchingTagKeys = Object.keys(tagIndex).filter(
+        (tag) => tag.includes(cleanQuery)
+    );
+
+    const dateSet = new Set();
+
+    matchingTagKeys.forEach((tag) => {
+        tagIndex[tag].forEach((dateKey) => dateSet.add(dateKey));
+    });
+
+    const dates = Array.from(dateSet).sort().reverse();
+
+    if (dates.length === 0) {
+
+        const empty = document.createElement("div");
+        empty.className = "search-empty";
+        empty.textContent = "No hay días con esa etiqueta.";
+
+        searchResults.appendChild(empty);
+
+        return;
+
+    }
+
+    dates.forEach((dateKey) => {
+
+        const dayData = dayDataCache[dateKey];
+        const [year, month, day] = dateKey.split("-").map(Number);
+
+        const row = document.createElement("div");
+        row.className = "search-result";
+
+        const dateLabel = document.createElement("div");
+        dateLabel.textContent =
+            `${day} de ${monthNamesLong[month - 1]} de ${year}`;
+
+        row.appendChild(dateLabel);
+
+        if (dayData?.tags?.length) {
+
+            const tagsLine = document.createElement("div");
+            tagsLine.className = "tags";
+            tagsLine.textContent = formatTags(dayData.tags);
+
+            row.appendChild(tagsLine);
+
+        }
+
+        row.addEventListener("click", () => {
+            searchPanel.style.display = "none";
+            goToDate(dateKey);
+        });
+
+        searchResults.appendChild(row);
+
+    });
+
+}

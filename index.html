@@ -21,10 +21,16 @@
    
     <div id="toolbar">
 
-      <label for="jump-date-input" id="calendar-btn" title="Ir a un día">
-        📅
-      </label>
-      <input type="date" id="jump-date-input" class="visually-hidden-input">
+      <div id="toolbar-left">
+
+        <label for="jump-date-input" id="calendar-btn" title="Ir a un día">
+          📅
+        </label>
+        <input type="date" id="jump-date-input" class="visually-hidden-input">
+
+        <button id="search-btn" title="Buscar por etiqueta">🔍</button>
+
+      </div>
 
       <div id="toolbar-title">One True Second</div>
 
@@ -44,6 +50,11 @@
 
     </div>
 
+    <div id="search-panel" style="display:none;">
+      <input type="text" id="search-input" placeholder="Buscar por etiqueta, ej: ana">
+      <div id="search-results"></div>
+    </div>
+
     <div id="grid-view">
       <h1>One True Second</h1>
       <p>MegaProyecto de Investigación y cotilleo interpersonal y de financiación por caridad</p>
@@ -56,6 +67,8 @@
 
       <input type="file" id="image-input" accept="image/*">
       <div id="image-gallery"></div>
+
+      <input type="text" id="day-tags" placeholder="#etiquetas separadas por espacio">
 
       <textarea id="day-text" placeholder="Escribe aquí..."></textarea>
     </div>
