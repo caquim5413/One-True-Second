@@ -162,6 +162,28 @@ padding: 10px;
   background: #b23b3b;
 }
 
+.download-photo-btn {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.download-photo-btn:hover {
+  background: #1d6879;
+}
+
 
 
 /* -------------------- SALTAR A UN DÍA -------------------- */

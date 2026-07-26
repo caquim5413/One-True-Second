@@ -277,8 +277,19 @@ async function renderGallery() {
                 deletePhoto(photo.id);
             });
 
+            const downloadBtn = document.createElement("button");
+            downloadBtn.className = "download-photo-btn";
+            downloadBtn.textContent = "⬇";
+            downloadBtn.title = "Descargar esta foto";
+            downloadBtn.type = "button";
+
+            downloadBtn.addEventListener("click", () => {
+                downloadPhoto(photo);
+            });
+
             wrapper.appendChild(img);
             wrapper.appendChild(deleteBtn);
+            wrapper.appendChild(downloadBtn);
             imageGallery.appendChild(wrapper);
 
         } catch (err) {
@@ -322,6 +333,33 @@ async function deletePhoto(photoId) {
         console.error(err);
         setSaveStatus("error", "No se pudo eliminar la foto.");
         alert("No se pudo eliminar la foto. Revisa la consola.");
+    }
+
+}
+
+// -------------------- DESCARGAR UNA FOTO INDIVIDUAL
+
+async function downloadPhoto(photo) {
+
+    try {
+
+        const blobUrl = await drive.getPhotoBlobUrl(photo.id);
+
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = photo.name || "foto.jpg";
+
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Pequeño margen antes de liberar la memoria, para dar
+        // tiempo a que el navegador arranque la descarga
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo descargar la foto. Revisa la consola.");
     }
 
 }
