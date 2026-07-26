@@ -177,15 +177,94 @@ async function renderGallery() {
 
             const url = await drive.getPhotoThumbnail(photo.id, 1000);
 
+            const wrapper = document.createElement("div");
+            wrapper.className = "photo-item";
+
             const img = document.createElement("img");
             img.src = url;
             img.className = "day-photo";
 
-            imageGallery.appendChild(img);
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-photo-btn";
+            deleteBtn.textContent = "✕";
+            deleteBtn.title = "Eliminar esta foto";
+            deleteBtn.type = "button";
+
+            deleteBtn.addEventListener("click", () => {
+                deletePhoto(photo.id);
+            });
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(deleteBtn);
+            imageGallery.appendChild(wrapper);
 
         } catch (err) {
             console.error(`No se pudo cargar la foto ${photo.name}`, err);
         }
+
+    }
+
+}
+
+// -------------------- ELIMINAR UNA FOTO DE UN DÍA
+
+async function deletePhoto(photoId) {
+
+    if (!activeDateKey) return;
+
+    const confirmado = confirm(
+        "¿Seguro que quieres eliminar esta foto? No se puede deshacer."
+    );
+
+    if (!confirmado) return;
+
+    try {
+
+        await drive.deletePhoto(photoId);
+
+        activeDayData.photos = activeDayData.photos.filter(
+            (p) => p.id !== photoId
+        );
+
+        await drive.saveDay(activeDateKey, activeDayData);
+
+        await renderGallery();
+        await updateDayCellPreview();
+
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo eliminar la foto. Revisa la consola.");
+    }
+
+}
+
+// -------------------- ACTUALIZAR LA MINIATURA DEL DÍA EN EL GRID
+
+async function updateDayCellPreview() {
+
+    if (!activeDayDiv) return;
+
+    if (activeDayData.photos.length > 0) {
+
+        const thumbUrl = await drive.getPhotoThumbnail(
+            activeDayData.photos[0].id
+        );
+
+        if (thumbUrl) {
+
+            activeDayDiv.style.backgroundImage = `url(${thumbUrl})`;
+            activeDayDiv.style.backgroundSize = "cover";
+            activeDayDiv.style.backgroundPosition = "center";
+            activeDayDiv.textContent = "";
+            activeDayDiv.classList.add("has-image");
+
+        }
+
+    } else {
+
+        activeDayDiv.style.backgroundImage = "";
+        activeDayDiv.classList.remove("has-image");
+        activeDayDiv.textContent = activeDayDiv.dataset.label || "";
 
     }
 
@@ -239,6 +318,7 @@ while (date <= today) {
     dayDiv.dataset.weekday = weekDay;
 
     dayDiv.textContent = `${day} ${monthNamesShort[month]}`;
+    dayDiv.dataset.label = dayDiv.textContent;
 
     dayDiv.addEventListener("click", () => {
         openDay(dateKey, day, month, year, dayDiv);
