@@ -175,7 +175,7 @@ async function renderGallery() {
 
         try {
 
-            const url = await drive.getPhotoThumbnail(photo.id, 1000);
+            const url = await drive.getPhotoThumbnail(photo.id, 1600);
 
             const wrapper = document.createElement("div");
             wrapper.className = "photo-item";
