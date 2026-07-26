@@ -5,14 +5,13 @@ const SCOPES =
 "https://www.googleapis.com/auth/drive.file";
 
 const TOKEN_STORAGE_KEY = "ots_google_token";
+const HAS_LOGGED_IN_KEY = "ots_has_logged_in";
 
 let tokenClient;
 let accessToken = null;
+let renewTimer = null;
 
 // ---------- Guardar / leer / borrar el token en el navegador ----------
-// Así no hace falta volver a iniciar sesión cada vez que se recarga
-// la página. El token de Google dura aprox. 1 hora; pasado ese tiempo
-// habrá que pulsar "Iniciar sesión" de nuevo (es normal y seguro).
 
 function saveTokenToStorage(token, expiresInSeconds) {
 
@@ -22,27 +21,17 @@ function saveTokenToStorage(token, expiresInSeconds) {
     };
 
     localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(record));
+    localStorage.setItem(HAS_LOGGED_IN_KEY, "1");
 
 }
 
 function getStoredToken() {
 
-    const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
+    const record = readTokenRecord();
 
-    if (!raw) return null;
+    if (!record) return null;
 
-    let record;
-
-    try {
-        record = JSON.parse(raw);
-    } catch {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        return null;
-    }
-
-    // Margen de 1 minuto de seguridad antes de la caducidad real
     if (Date.now() > record.expires_at - 60000) {
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
         return null;
     }
 
@@ -50,8 +39,46 @@ function getStoredToken() {
 
 }
 
+function readTokenRecord() {
+
+    const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+    if (!raw) return null;
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        return null;
+    }
+
+}
+
 function clearStoredToken() {
     localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+// ---------- Renovación automática y silenciosa ----------
+// Un poco antes de que el token caduque (dura ~1 hora), pedimos uno
+// nuevo en silencio, sin que el usuario vea ni haga nada. Mientras la
+// pestaña siga abierta y la sesión de Google siga activa, esto hace
+// que en la práctica no haga falta volver a iniciar sesión nunca.
+
+function scheduleRenewal(expiresInSeconds) {
+
+    clearTimeout(renewTimer);
+
+    // Renovamos 5 minutos antes de que caduque de verdad
+    const renewInMs = Math.max((expiresInSeconds - 300) * 1000, 10000);
+
+    renewTimer = setTimeout(() => {
+
+        if (tokenClient) {
+            tokenClient.requestAccessToken({ prompt: "" });
+        }
+
+    }, renewInMs);
+
 }
 
 // ---------- Conectar con Drive con un token (nuevo o guardado) ----------
@@ -93,7 +120,6 @@ async function connectDrive(token) {
 
 // Esta función la llama index.html en cuanto el script de Google
 // (accounts.google.com/gsi/client) termina de cargar de verdad.
-// Así evitamos el error "google is not defined".
 function initGoogleClient() {
 
     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -104,10 +130,21 @@ function initGoogleClient() {
 
         callback: async (response) => {
 
+            // Una renovación silenciosa puede fallar (por ejemplo, si
+            // el usuario cerró sesión de Google del todo). En ese caso
+            // simplemente dejamos el botón de "Iniciar sesión" normal,
+            // sin molestar con una alerta.
+            if (response.error) {
+                console.warn("No se pudo renovar la sesión en silencio:", response.error);
+                return;
+            }
+
             saveTokenToStorage(
                 response.access_token,
                 response.expires_in
             );
+
+            scheduleRenewal(response.expires_in);
 
             await connectDrive(response.access_token);
 
@@ -115,12 +152,24 @@ function initGoogleClient() {
 
     });
 
-    // Si ya había una sesión guardada y todavía no ha caducado,
-    // entramos directamente sin pedir clic en el botón.
     const stored = getStoredToken();
 
     if (stored) {
+
+        // Sesión guardada y todavía válida: entramos directo
         connectDrive(stored);
+
+        const record = readTokenRecord();
+        const remainingSeconds = Math.floor((record.expires_at - Date.now()) / 1000);
+
+        scheduleRenewal(remainingSeconds);
+
+    } else if (localStorage.getItem(HAS_LOGGED_IN_KEY)) {
+
+        // Ya habíamos iniciado sesión antes en este navegador:
+        // intentamos renovar en silencio, sin pedir clic.
+        tokenClient.requestAccessToken({ prompt: "" });
+
     }
 
 }
@@ -148,7 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const token = accessToken;
 
+            clearTimeout(renewTimer);
             clearStoredToken();
+            localStorage.removeItem(HAS_LOGGED_IN_KEY);
 
             if (token && google.accounts?.oauth2?.revoke) {
 
