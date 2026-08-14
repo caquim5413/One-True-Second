@@ -388,8 +388,7 @@ textarea{
   z-index: 99;
   padding: 12px 16px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  border-bottom: 4px solid var(--accent);
-  border-radius: 0 0 14px 14px;
+  border-bottom: 8px solid var(--accent);
   max-height: 65vh;
   overflow-y: auto;
 }
@@ -535,8 +534,7 @@ textarea{
   z-index: 99;
   padding: 12px 16px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  border-bottom: 4px solid var(--accent);
-  border-radius: 0 0 14px 14px;
+  border-bottom: 8px solid var(--accent);
   max-height: 70vh;
   overflow-y: auto;
 }
