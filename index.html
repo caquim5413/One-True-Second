@@ -24,11 +24,20 @@
       <div id="toolbar-left">
 
         <label for="jump-date-input" id="calendar-btn" title="Ir a un día">
-          📅
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+            <rect x="3" y="5" width="18" height="15" rx="2"></rect>
+            <rect x="7" y="2" width="2" height="6" rx="1"></rect>
+            <rect x="15" y="2" width="2" height="6" rx="1"></rect>
+          </svg>
         </label>
         <input type="date" id="jump-date-input" class="visually-hidden-input">
 
-        <button id="search-btn" title="Buscar por etiqueta">🔍</button>
+        <button id="search-btn" title="Buscar por etiqueta">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="3"></circle>
+            <line x1="15" y1="15" x2="20" y2="20" stroke="currentColor" stroke-width="3" stroke-linecap="round"></line>
+          </svg>
+        </button>
 
       </div>
 
@@ -36,12 +45,22 @@
 
       <div id="toolbar-right">
 
-        <button id="tag-manager-btn" title="Administrar etiquetas">🏷️</button>
+        <button id="tag-manager-btn" title="Administrar etiquetas">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M3 3h8.5L21 12.5 12.5 21 3 11.5V3z" fill="currentColor"></path>
+            <circle cx="7.3" cy="7.3" r="1.6" fill="var(--accent)"></circle>
+          </svg>
+        </button>
 
         <div id="profile-wrapper">
 
           <button id="profile-btn" title="Cuenta">
-            <span id="profile-placeholder">👤</span>
+            <span id="profile-placeholder">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </span>
             <img id="profile-avatar" alt="Tu perfil" style="display:none;">
           </button>
 
@@ -54,6 +73,7 @@
         </div>
 
       </div>
+
 
     </div>
 
