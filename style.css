@@ -124,11 +124,14 @@ body{
 }
 
 #image-input-label, #back {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 48px;
   text-align: center;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
   cursor: pointer;
   font-family: sans-serif;
   box-sizing: border-box;
