@@ -6,7 +6,7 @@
     <title>One True Second</title>
 
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1d6879">
+    <meta name="theme-color" content="#708461">
 
     <!-- Para que se vea bien al añadirla a la pantalla de inicio en iPhone -->
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -74,11 +74,15 @@
     </div>
 
     <div id="day-view" style="display: none;">
-      <button id="back">Volver</button>
       <h2 id="day-title"></h2>
       <div id="save-status"></div>
 
-      <input type="file" id="image-input" accept="image/*">
+      <div id="day-actions-row">
+        <label for="image-input" id="image-input-label">📷 Añadir foto</label>
+        <input type="file" id="image-input" accept="image/*" class="visually-hidden-input">
+        <button id="back">← Volver</button>
+      </div>
+
       <div id="image-gallery"></div>
 
       <input type="text" id="day-tags" placeholder="#etiquetas separadas por espacio">

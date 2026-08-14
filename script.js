@@ -327,6 +327,7 @@ async function openDay(dateKey, day, month, year, dayDiv) {
     dayTagsInput.value = "";
     dayTagsInput.disabled = true;
     imageInput.disabled = true;
+    document.getElementById("image-input-label").classList.add("disabled");
     imageGallery.innerHTML = "";
     setSaveStatus("", "");
 
@@ -364,6 +365,7 @@ async function openDay(dateKey, day, month, year, dayDiv) {
     dayTagsInput.disabled = false;
 
     imageInput.disabled = false;
+    document.getElementById("image-input-label").classList.remove("disabled");
     imageInput.value = "";
 
     await renderGallery();
