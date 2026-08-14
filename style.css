@@ -1,6 +1,6 @@
 body{
   font-family: sans-serif;
-  padding: 20px;
+  padding: 0;
   padding-top: calc(76px + env(safe-area-inset-top));
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
   background: #FFFBED;
@@ -13,6 +13,11 @@ h1{
   padding: 5px 5px;
   border-radius: 5px;
   text-align: center;
+}
+
+#grid-view, #day-view {
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 
@@ -44,6 +49,8 @@ h1{
   grid-template-columns: repeat(3,1fr);
   gap: 1px;
   margin-top: 20px;
+  margin-left: -16px;
+  margin-right: -16px;
 }
 
 .day {
