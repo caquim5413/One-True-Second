@@ -793,11 +793,14 @@ searchInput.addEventListener("input", () => {
     renderSearchResults(searchInput.value.trim().toLowerCase());
 });
 
-function renderSearchResults(query) {
+let searchRequestId = 0;
 
-    searchResults.innerHTML = "";
+async function renderSearchResults(query) {
 
-    if (!query) return;
+    if (!query) {
+        searchResults.innerHTML = "";
+        return;
+    }
 
     const cleanQuery = query.replace(/^#/, "");
 
@@ -815,6 +818,8 @@ function renderSearchResults(query) {
 
     if (dates.length === 0) {
 
+        searchResults.innerHTML = "";
+
         const empty = document.createElement("div");
         empty.className = "search-empty";
         empty.textContent = "No hay días con esa etiqueta.";
@@ -825,38 +830,63 @@ function renderSearchResults(query) {
 
     }
 
-    dates.forEach((dateKey) => {
+    // Si el usuario sigue escribiendo mientras cargan las miniaturas,
+    // esto evita que una búsqueda antigua pinte resultados por encima
+    // de la búsqueda más reciente.
+    const requestId = ++searchRequestId;
 
-        const dayData = dayDataCache[dateKey];
-        const [year, month, day] = dateKey.split("-").map(Number);
+    const thumbs = await Promise.all(
+        dates.map((dateKey) => buildSearchResultThumb(dateKey))
+    );
 
-        const row = document.createElement("div");
-        row.className = "search-result";
+    if (requestId !== searchRequestId) return;
 
-        const dateLabel = document.createElement("div");
-        dateLabel.textContent =
-            `${day} de ${monthNamesLong[month - 1]} de ${year}`;
+    searchResults.innerHTML = "";
 
-        row.appendChild(dateLabel);
+    thumbs.forEach((thumb) => searchResults.appendChild(thumb));
 
-        if (dayData?.tags?.length) {
+}
 
-            const tagsLine = document.createElement("div");
-            tagsLine.className = "tags";
-            tagsLine.textContent = formatTags(dayData.tags);
+async function buildSearchResultThumb(dateKey) {
 
-            row.appendChild(tagsLine);
+    const dayData = dayDataCache[dateKey];
+    const [year, month, day] = dateKey.split("-").map(Number);
 
+    const thumb = document.createElement("div");
+    thumb.className = "search-result-thumb";
+
+    if (dayData?.tags?.length) {
+        thumb.title = formatTags(dayData.tags);
+    }
+
+    if (dayData?.photos?.length > 0) {
+
+        try {
+
+            const url = await drive.getPhotoThumbnail(dayData.photos[0].id);
+
+            if (url) {
+                thumb.style.backgroundImage = `url(${url})`;
+            }
+
+        } catch (err) {
+            console.error(`No se pudo cargar la miniatura de ${dateKey}`, err);
         }
 
-        row.addEventListener("click", () => {
-            searchPanel.style.display = "none";
-            goToDate(dateKey);
-        });
+    }
 
-        searchResults.appendChild(row);
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = `${day} ${monthNamesShort[month - 1]} ${year}`;
 
+    thumb.appendChild(label);
+
+    thumb.addEventListener("click", () => {
+        searchPanel.style.display = "none";
+        goToDate(dateKey);
     });
+
+    return thumb;
 
 }
 

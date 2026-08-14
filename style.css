@@ -336,20 +336,35 @@ padding: 10px;
   border-radius: 6px;
 }
 
-.search-result {
-  padding: 10px 4px;
-  border-bottom: 1px solid #eee;
+#search-results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.search-result-thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  overflow: hidden;
   cursor: pointer;
+  background: #E4E1D6;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
 }
 
-.search-result:hover {
-  background: #FFFBED;
-}
-
-.search-result .tags {
-  color: #1d6879;
-  font-size: 13px;
-  margin-top: 2px;
+.search-result-thumb .label {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.55);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: "Rubik";
 }
 
 .search-empty {
