@@ -34,17 +34,23 @@
 
       <div id="toolbar-title">One True Second</div>
 
-      <div id="profile-wrapper">
+      <div id="toolbar-right">
 
-        <button id="profile-btn" title="Cuenta">
-          <span id="profile-placeholder">👤</span>
-          <img id="profile-avatar" alt="Tu perfil" style="display:none;">
-        </button>
+        <button id="tag-manager-btn" title="Administrar etiquetas">🏷️</button>
 
-        <div id="profile-menu" style="display:none;">
-          <span id="profile-name"></span>
-          <button id="export-backup-btn">Descargar copia de seguridad</button>
-          <button id="google-logout">Cerrar sesión</button>
+        <div id="profile-wrapper">
+
+          <button id="profile-btn" title="Cuenta">
+            <span id="profile-placeholder">👤</span>
+            <img id="profile-avatar" alt="Tu perfil" style="display:none;">
+          </button>
+
+          <div id="profile-menu" style="display:none;">
+            <span id="profile-name"></span>
+            <button id="export-backup-btn">Descargar copia de seguridad</button>
+            <button id="google-logout">Cerrar sesión</button>
+          </div>
+
         </div>
 
       </div>
@@ -55,6 +61,12 @@
       <input type="text" id="search-input" list="known-tags-list" placeholder="Buscar por etiqueta, ej: ana">
       <datalist id="known-tags-list"></datalist>
       <div id="search-results"></div>
+    </div>
+
+    <div id="tag-manager-panel" style="display:none;">
+      <div id="tag-manager-header"><strong>Administrar etiquetas</strong></div>
+      <div id="tag-manager-status"></div>
+      <div id="tag-manager-list"></div>
     </div>
 
     <div id="grid-view">

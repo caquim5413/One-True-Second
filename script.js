@@ -22,6 +22,11 @@ const searchResults = document.getElementById("search-results");
 
 const exportBackupBtn = document.getElementById("export-backup-btn");
 
+const tagManagerBtn = document.getElementById("tag-manager-btn");
+const tagManagerPanel = document.getElementById("tag-manager-panel");
+const tagManagerList = document.getElementById("tag-manager-list");
+const tagManagerStatus = document.getElementById("tag-manager-status");
+
 // -------------------- FECHAS
 
 const startDate = new Date(2025, 0, 1);
@@ -1138,5 +1143,237 @@ async function exportBackup() {
         exportBackupBtn.disabled = false;
 
     }
+
+}
+
+// -------------------- ADMINISTRADOR DE ETIQUETAS
+
+let tagManagerBusy = false;
+
+tagManagerBtn.addEventListener("click", (event) => {
+
+    event.stopPropagation();
+
+    if (!driveReady) {
+        alert("Primero tienes que iniciar sesión con Google.");
+        return;
+    }
+
+    const show = tagManagerPanel.style.display === "none";
+
+    tagManagerPanel.style.display = show ? "block" : "none";
+
+    if (show) {
+        tagManagerStatus.textContent = "";
+        renderTagManagerList();
+    }
+
+});
+
+document.addEventListener("click", (event) => {
+
+    if (
+        tagManagerPanel.style.display !== "none" &&
+        !tagManagerPanel.contains(event.target) &&
+        event.target !== tagManagerBtn
+    ) {
+        tagManagerPanel.style.display = "none";
+    }
+
+});
+
+function renderTagManagerList() {
+
+    tagManagerList.innerHTML = "";
+
+    const keys = Object.keys(tagDisplayNames).sort();
+
+    if (keys.length === 0) {
+
+        const empty = document.createElement("div");
+        empty.className = "search-empty";
+        empty.textContent = "Todavía no has usado ninguna etiqueta.";
+
+        tagManagerList.appendChild(empty);
+
+        return;
+
+    }
+
+    keys.forEach((key) => {
+
+        const count = tagIndex[key] ? tagIndex[key].size : 0;
+
+        const row = document.createElement("div");
+        row.className = "tag-manager-row";
+
+        const info = document.createElement("div");
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "tag-name";
+        nameSpan.textContent = `#${tagDisplayNames[key]}`;
+
+        const countSpan = document.createElement("span");
+        countSpan.className = "tag-count";
+        countSpan.textContent = `(${count} día${count === 1 ? "" : "s"})`;
+
+        info.appendChild(nameSpan);
+        info.appendChild(countSpan);
+
+        const actions = document.createElement("div");
+        actions.className = "tag-manager-actions";
+
+        const renameBtn = document.createElement("button");
+        renameBtn.type = "button";
+        renameBtn.className = "rename-btn";
+        renameBtn.textContent = "Renombrar";
+        renameBtn.addEventListener("click", () => handleRenameTag(key));
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Eliminar";
+        deleteBtn.addEventListener("click", () => handleDeleteTag(key));
+
+        actions.appendChild(renameBtn);
+        actions.appendChild(deleteBtn);
+
+        row.appendChild(info);
+        row.appendChild(actions);
+
+        tagManagerList.appendChild(row);
+
+    });
+
+}
+
+async function handleRenameTag(oldKey) {
+
+    if (tagManagerBusy) return;
+
+    const currentName = tagDisplayNames[oldKey];
+
+    const input = prompt(
+        `Nuevo nombre para la etiqueta #${currentName}:`,
+        currentName
+    );
+
+    if (input === null) return; // cancelado
+
+    const parsed = parseTags(input);
+
+    if (parsed.length === 0) {
+        alert("El nuevo nombre no puede estar vacío.");
+        return;
+    }
+
+    const newTagName = parsed[0];
+    const newKey = newTagName.toLowerCase();
+
+    if (newKey === oldKey) return;
+
+    await applyTagChangeToAllDays(
+
+        oldKey,
+
+        (tags) => {
+
+            const withoutOld = tags.filter((t) => t.toLowerCase() !== oldKey);
+            const alreadyHasNew = withoutOld.some((t) => t.toLowerCase() === newKey);
+
+            return alreadyHasNew ? withoutOld : [...withoutOld, newTagName];
+
+        },
+
+        `Renombrando #${currentName} a #${newTagName}`
+
+    );
+
+    renderTagManagerList();
+
+}
+
+async function handleDeleteTag(key) {
+
+    if (tagManagerBusy) return;
+
+    const currentName = tagDisplayNames[key];
+    const count = tagIndex[key] ? tagIndex[key].size : 0;
+
+    const confirmado = confirm(
+        `¿Eliminar la etiqueta #${currentName} de ${count} día(s)? No se puede deshacer.`
+    );
+
+    if (!confirmado) return;
+
+    await applyTagChangeToAllDays(
+
+        key,
+
+        (tags) => tags.filter((t) => t.toLowerCase() !== key),
+
+        `Eliminando #${currentName}`
+
+    );
+
+    renderTagManagerList();
+
+}
+
+async function applyTagChangeToAllDays(key, transformFn, progressLabel) {
+
+    const dateKeys = Array.from(tagIndex[key] || []);
+
+    if (dateKeys.length === 0) return;
+
+    tagManagerBusy = true;
+
+    for (let i = 0; i < dateKeys.length; i++) {
+
+        const dateKey = dateKeys[i];
+
+        tagManagerStatus.textContent =
+            `${progressLabel}... (${i + 1}/${dateKeys.length})`;
+
+        try {
+
+            let dayData = dayDataCache[dateKey];
+
+            if (!dayData) {
+                dayData = await drive.loadDay(dateKey);
+                dayDataCache[dateKey] = dayData;
+            }
+
+            dayData.tags = transformFn(dayData.tags || []);
+
+            await drive.saveDay(dateKey, dayData);
+
+            indexTags(dateKey, dayData.tags);
+
+            if (dateKey === activeDateKey) {
+                dayTagsInput.value = formatTags(dayData.tags);
+                updateTagChipsActiveState();
+            }
+
+        } catch (err) {
+            console.error(`No se pudo actualizar ${dateKey}`, err);
+        }
+
+    }
+
+    // Si la etiqueta original se quedó sin ningún día, la quitamos
+    // del todo para que no aparezca con (0 días)
+    if (!tagIndex[key] || tagIndex[key].size === 0) {
+        delete tagIndex[key];
+        delete tagDisplayNames[key];
+    }
+
+    tagManagerBusy = false;
+
+    tagManagerStatus.textContent = "Hecho ✓";
+
+    setTimeout(() => {
+        tagManagerStatus.textContent = "";
+    }, 2000);
 
 }
