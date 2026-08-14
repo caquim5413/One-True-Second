@@ -24,7 +24,7 @@ body{
 .year-title{
   font-size: 24px;
   margin: 0;
-  padding: 8px 12px;
+  padding: 16px 16px;
   color: white;
   background-color: var(--accent-dark);
   font-family: "Rubik";
@@ -36,7 +36,7 @@ body{
 .month-title{
   font-size: 18px;
   margin: 0;
-  padding: 6px 10px;
+  padding: 12px 14px;
   color: var(--accent-dark);
   background-color: var(--accent-light);
   font-family: "Rubik";
