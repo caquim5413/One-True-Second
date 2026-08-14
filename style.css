@@ -1,11 +1,10 @@
 :root {
-  --accent: #708461;       /* acento principal */
-  --accent-dark: #5c6d4f;  /* variante más oscura del acento, para hover/detalles */
-  --bg: #F5E1BC;           /* fondo base */
-  --bg-dark: #EDCA92;      /* base oscurecida */
-  --contrast-1: #DB864D;   /* contraste 1 */
-  --contrast-2: #CA643E;   /* contraste 2 */
-  --text-dark: #3b3a3f;    /* texto neutro sobre fondos claros */
+  --accent: #708461;        /* verde principal */
+  --accent-dark: #4f5e42;   /* verde oscuro, para texto/hover fuertes */
+  --accent-light: #d9e2cd;  /* verde claro, para fondos suaves */
+  --bg: #FFFBED;            /* fondo base, pajizo */
+  --bg-dark: #EDE3C0;       /* base oscurecida, pajizo oscurecido */
+  --text-dark: #3b3a3f;     /* texto neutro sobre fondos claros */
 }
 
 body{
@@ -23,22 +22,27 @@ body{
 
 
 .year-title{
-  font-size: 28px;
+  font-size: 24px;
   margin-top: 15px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 5px;
   color: var(--accent-dark);
+  background-color: var(--accent-light);
   font-family: "Rubik";
   font-weight: bold;
+  text-align: right;
   grid-column: 1 / -1;
 }
 
 .month-title{
   font-size: 18px;
   margin-top: 15px;
-  margin-bottom: 15px;
-  padding: 5px 5px;
+  margin-bottom: 12px;
+  padding: 6px 10px;
   border-radius: 5px;
   color: #ffff;
-  background-color: var(--contrast-2);
+  background-color: var(--accent);
   font-family: "Rubik";
   font-weight: bold;
   grid-column: 1 / -1;
@@ -179,7 +183,7 @@ textarea{
 }
 
 .delete-photo-btn:hover {
-  background: var(--contrast-2);
+  background: var(--accent-dark);
 }
 
 .download-photo-btn {
@@ -209,7 +213,7 @@ textarea{
 /* -------------------- SALTAR A UN DÍA -------------------- */
 
 .day.jump-highlight {
-  outline: 3px solid var(--contrast-1);
+  outline: 3px solid var(--accent-dark);
   outline-offset: 2px;
 }
 
@@ -306,7 +310,7 @@ textarea{
 
 #profile-menu #google-logout {
   align-self: stretch;
-  background: var(--contrast-2);
+  background: var(--accent-dark);
   color: white;
   border: none;
   border-radius: 6px;
@@ -416,9 +420,9 @@ textarea{
   transition: color 0.2s;
 }
 
-#save-status.saving { color: var(--contrast-1); }
-#save-status.saved { color: var(--accent-dark); }
-#save-status.error { color: var(--contrast-2); }
+#save-status.saving { color: var(--accent); }
+#save-status.saved { color: var(--accent-dark); font-weight: bold; }
+#save-status.error { color: var(--accent-dark); font-weight: bold; text-decoration: underline; }
 
 /* -------------------- COPIA DE SEGURIDAD -------------------- */
 
@@ -498,7 +502,7 @@ textarea{
 
 #tag-manager-status {
   font-size: 13px;
-  color: var(--contrast-1);
+  color: var(--accent-dark);
   min-height: 18px;
   margin-bottom: 6px;
 }
@@ -544,6 +548,6 @@ textarea{
 }
 
 .tag-manager-actions .delete-btn {
-  color: var(--contrast-2);
-  border-color: var(--contrast-2);
+  color: var(--accent-dark);
+  border-color: var(--accent-dark);
 }
