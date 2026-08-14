@@ -288,10 +288,12 @@ textarea{
 }
 
 #calendar-btn {
-  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   padding: 6px;
-  line-height: 1;
+  color: white;
 }
 
 .visually-hidden-input {
@@ -369,13 +371,14 @@ textarea{
 }
 
 #search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: white;
-  font-size: 19px;
   cursor: pointer;
   padding: 6px;
-  line-height: 1;
 }
 
 #search-panel {
@@ -516,10 +519,12 @@ textarea{
 }
 
 #tag-manager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: white;
-  font-size: 18px;
   cursor: pointer;
   padding: 6px;
 }
