@@ -23,12 +23,10 @@ body{
 
 .year-title{
   font-size: 24px;
-  margin-top: 15px;
-  margin-bottom: 12px;
-  padding: 6px 12px;
-  border-radius: 5px;
-  color: var(--accent-dark);
-  background-color: var(--accent-light);
+  margin: 0;
+  padding: 8px 12px;
+  color: white;
+  background-color: var(--accent-dark);
   font-family: "Rubik";
   font-weight: bold;
   text-align: right;
@@ -37,12 +35,10 @@ body{
 
 .month-title{
   font-size: 18px;
-  margin-top: 15px;
-  margin-bottom: 12px;
+  margin: 0;
   padding: 6px 10px;
-  border-radius: 5px;
-  color: #ffff;
-  background-color: var(--accent);
+  color: var(--accent-dark);
+  background-color: var(--accent-light);
   font-family: "Rubik";
   font-weight: bold;
   grid-column: 1 / -1;
