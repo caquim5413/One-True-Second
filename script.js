@@ -45,6 +45,10 @@ const dayDataCache = {};
 // etiqueta en minúsculas -> Set de dateKeys que la tienen
 const tagIndex = {};
 
+// etiqueta en minúsculas -> cómo se escribió la última vez (para
+// que las sugerencias respeten mayúsculas, ej. "Ana")
+const tagDisplayNames = {};
+
 // -------------------- TEXTOS
 
 const weekDaysShort = [
@@ -91,14 +95,126 @@ function indexTags(dateKey, tags) {
         if (!tagIndex[key]) tagIndex[key] = new Set();
 
         tagIndex[key].add(dateKey);
+        tagDisplayNames[key] = tag;
 
     });
+
+    scheduleSuggestionsRefresh();
 
 }
 
 function removeFromTagIndex(dateKey) {
 
     Object.values(tagIndex).forEach((set) => set.delete(dateKey));
+
+}
+
+// -------------------- SUGERENCIAS DE ETIQUETAS
+// (autocompletado en el buscador + pastillas en el día)
+
+let refreshSuggestionsTimeout = null;
+
+function scheduleSuggestionsRefresh() {
+
+    // Durante la carga inicial se indexan muchos días seguidos;
+    // agrupamos los refrescos para no repintar cientos de veces.
+    clearTimeout(refreshSuggestionsTimeout);
+    refreshSuggestionsTimeout = setTimeout(refreshTagSuggestions, 300);
+
+}
+
+function refreshTagSuggestions() {
+
+    refreshTagDatalist();
+    renderTagChips();
+
+}
+
+function refreshTagDatalist() {
+
+    const datalist = document.getElementById("known-tags-list");
+
+    if (!datalist) return;
+
+    datalist.innerHTML = "";
+
+    Object.keys(tagDisplayNames)
+        .sort()
+        .forEach((key) => {
+
+            const option = document.createElement("option");
+            option.value = `#${tagDisplayNames[key]}`;
+
+            datalist.appendChild(option);
+
+        });
+
+}
+
+function renderTagChips() {
+
+    const container = document.getElementById("tag-chips");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    Object.keys(tagDisplayNames)
+        .sort()
+        .forEach((key) => {
+
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "tag-chip";
+            chip.dataset.tagKey = key;
+            chip.textContent = `#${tagDisplayNames[key]}`;
+
+            chip.addEventListener("click", () => {
+                toggleTagInInput(tagDisplayNames[key]);
+            });
+
+            container.appendChild(chip);
+
+        });
+
+    updateTagChipsActiveState();
+
+}
+
+function updateTagChipsActiveState() {
+
+    const container = document.getElementById("tag-chips");
+
+    if (!container) return;
+
+    const current = new Set(
+        parseTags(dayTagsInput.value).map((t) => t.toLowerCase())
+    );
+
+    container.querySelectorAll(".tag-chip").forEach((chip) => {
+        chip.classList.toggle("active", current.has(chip.dataset.tagKey));
+    });
+
+}
+
+function toggleTagInInput(tag) {
+
+    if (!activeDateKey) return;
+
+    const current = parseTags(dayTagsInput.value);
+    const key = tag.toLowerCase();
+
+    const alreadyThere = current.some((t) => t.toLowerCase() === key);
+
+    const updated = alreadyThere
+        ? current.filter((t) => t.toLowerCase() !== key)
+        : [...current, tag];
+
+    dayTagsInput.value = formatTags(updated);
+
+    // Reutilizamos el mismo listener de guardado que si lo hubieras
+    // escrito a mano
+    dayTagsInput.dispatchEvent(new Event("input"));
 
 }
 
@@ -239,6 +355,7 @@ async function openDay(dateKey, day, month, year, dayDiv) {
     dayText.disabled = false;
 
     dayTagsInput.value = formatTags(dayData.tags);
+    updateTagChipsActiveState();
     dayTagsInput.disabled = false;
 
     imageInput.disabled = false;
@@ -656,6 +773,8 @@ dayTagsInput.addEventListener("input", () => {
     if (!activeDateKey) return;
 
     activeDayData.tags = parseTags(dayTagsInput.value);
+
+    updateTagChipsActiveState();
 
     setSaveStatus("saving", "Guardando...");
 

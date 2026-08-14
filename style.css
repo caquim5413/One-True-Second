@@ -408,3 +408,31 @@ padding: 10px;
   border: 1px solid #ccc;
   color: #3b3a3f;
 }
+
+/* -------------------- PASTILLAS DE ETIQUETAS CONOCIDAS -------------------- */
+
+#tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 10px 0;
+}
+
+.tag-chip {
+  border: 1px solid #1d6879;
+  background: white;
+  color: #1d6879;
+  border-radius: 100px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.tag-chip:hover {
+  background: #FFFBED;
+}
+
+.tag-chip.active {
+  background: #1d6879;
+  color: white;
+}

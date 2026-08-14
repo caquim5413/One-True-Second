@@ -52,7 +52,8 @@
     </div>
 
     <div id="search-panel" style="display:none;">
-      <input type="text" id="search-input" placeholder="Buscar por etiqueta, ej: ana">
+      <input type="text" id="search-input" list="known-tags-list" placeholder="Buscar por etiqueta, ej: ana">
+      <datalist id="known-tags-list"></datalist>
       <div id="search-results"></div>
     </div>
 
@@ -71,6 +72,7 @@
       <div id="image-gallery"></div>
 
       <input type="text" id="day-tags" placeholder="#etiquetas separadas por espacio">
+      <div id="tag-chips"></div>
 
       <textarea id="day-text" placeholder="Escribe aquí..."></textarea>
     </div>
