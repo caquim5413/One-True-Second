@@ -20,6 +20,10 @@
     --text-dark: #e8e8e8;
     --surface: #242424;
   }
+
+  .day.has-entry {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
 }
 
 body{
@@ -98,7 +102,7 @@ body{
 }
 
 .day.has-entry {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px #9fb38d;
 }
 
 .day::after {
