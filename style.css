@@ -11,14 +11,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent: #7fa06c;
-    --accent-strong: #3e4a34;
+    --accent: #5f7350;
+    --accent-strong: #3a4530;
     --accent-dark: #b9d1a6;
-    --accent-light: #33402a;
-    --bg: #1c1f17;
-    --bg-dark: #2b2f24;
-    --text-dark: #e7e3d5;
-    --surface: #262a20;
+    --accent-light: #2c3624;
+    --bg: #121212;
+    --bg-dark: #1e1e1e;
+    --text-dark: #e8e8e8;
+    --surface: #242424;
   }
 }
 
@@ -98,7 +98,7 @@ body{
 }
 
 .day.has-entry {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent-dark);
 }
 
 .day::after {
