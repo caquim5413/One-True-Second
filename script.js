@@ -156,6 +156,9 @@ function refreshTagDatalist() {
 
 }
 
+const TAG_CHIPS_DEFAULT_LIMIT = 8;
+let tagChipsExpanded = false;
+
 function renderTagChips() {
 
     const container = document.getElementById("tag-chips");
@@ -164,23 +167,56 @@ function renderTagChips() {
 
     container.innerHTML = "";
 
-    Object.keys(tagDisplayNames)
-        .sort()
-        .forEach((key) => {
+    // Las más usadas primero; en empate, orden alfabético
+    const keys = Object.keys(tagDisplayNames).sort((a, b) => {
 
-            const chip = document.createElement("button");
-            chip.type = "button";
-            chip.className = "tag-chip";
-            chip.dataset.tagKey = key;
-            chip.textContent = `#${tagDisplayNames[key]}`;
+        const countA = tagIndex[a] ? tagIndex[a].size : 0;
+        const countB = tagIndex[b] ? tagIndex[b].size : 0;
 
-            chip.addEventListener("click", () => {
-                toggleTagInInput(tagDisplayNames[key]);
-            });
+        if (countB !== countA) return countB - countA;
 
-            container.appendChild(chip);
+        return a.localeCompare(b);
 
+    });
+
+    const visibleKeys = tagChipsExpanded
+        ? keys
+        : keys.slice(0, TAG_CHIPS_DEFAULT_LIMIT);
+
+    visibleKeys.forEach((key) => {
+
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "tag-chip";
+        chip.dataset.tagKey = key;
+        chip.textContent = `#${tagDisplayNames[key]}`;
+
+        chip.addEventListener("click", () => {
+            toggleTagInInput(tagDisplayNames[key]);
         });
+
+        container.appendChild(chip);
+
+    });
+
+    if (keys.length > TAG_CHIPS_DEFAULT_LIMIT) {
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.type = "button";
+        toggleBtn.className = "tag-chip tag-chip-toggle";
+
+        toggleBtn.textContent = tagChipsExpanded
+            ? "Ver menos"
+            : `+${keys.length - TAG_CHIPS_DEFAULT_LIMIT} más`;
+
+        toggleBtn.addEventListener("click", () => {
+            tagChipsExpanded = !tagChipsExpanded;
+            renderTagChips();
+        });
+
+        container.appendChild(toggleBtn);
+
+    }
 
     updateTagChipsActiveState();
 

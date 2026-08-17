@@ -510,6 +510,17 @@ textarea{
   color: white;
 }
 
+.tag-chip-toggle {
+  border-style: dashed;
+  color: var(--accent-dark);
+  background: var(--bg);
+  font-weight: bold;
+}
+
+.tag-chip-toggle:hover {
+  background: var(--bg-dark);
+}
+
 /* -------------------- ADMINISTRADOR DE ETIQUETAS -------------------- */
 
 #toolbar-right {
