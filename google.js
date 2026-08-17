@@ -208,11 +208,26 @@ function initGoogleClient() {
 
     });
 
+    checkSessionAndReconnect();
+
+}
+
+// Comprueba si el token guardado sigue vivo; si no, intenta
+// renovarlo en silencio. La llamamos al cargar la página Y cada vez
+// que la app vuelve a primer plano (el móvil suele "congelar" los
+// temporizadores mientras la app está en segundo plano, así que la
+// renovación programada puede no haber llegado a dispararse).
+function checkSessionAndReconnect() {
+
+    if (!tokenClient) return;
+
     const stored = getStoredToken();
 
     if (stored) {
 
-        connectDrive(stored);
+        if (!isLoggedIn) {
+            connectDrive(stored);
+        }
 
         const record = readTokenRecord();
         const remainingSeconds = Math.floor((record.expires_at - Date.now()) / 1000);
@@ -226,6 +241,18 @@ function initGoogleClient() {
     }
 
 }
+
+document.addEventListener("visibilitychange", () => {
+
+    if (document.visibilityState === "visible") {
+        checkSessionAndReconnect();
+    }
+
+});
+
+window.addEventListener("focus", () => {
+    checkSessionAndReconnect();
+});
 
 // ---------- Botón de perfil (entrar / menú de salir) ----------
 
