@@ -1415,3 +1415,98 @@ async function applyTagChangeToAllDays(key, transformFn, progressLabel) {
     }, 2000);
 
 }
+
+// -------------------- DESLIZAR PARA CAMBIAR DE DÍA
+
+let swipeStartX = null;
+let swipeStartY = null;
+let swipeTracking = false;
+
+function getAdjacentDateKey(dateKey, direction) {
+
+    const [year, month, day] = dateKey.split("-").map(Number);
+
+    const date = new Date(year, month - 1, day);
+    date.setDate(date.getDate() + direction);
+
+    const candidateKey =
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+
+    // Solo válido si ese día existe en el diario (dentro del rango)
+    return dayDivs[candidateKey] ? candidateKey : null;
+}
+
+function navigateToAdjacentDay(direction) {
+
+    if (!activeDateKey) return;
+
+    const newKey = getAdjacentDateKey(activeDateKey, direction);
+
+    if (!newKey) return; // ya estamos en el primer/último día
+
+    const dayDiv = dayDivs[newKey];
+    const [year, month, day] = newKey.split("-").map(Number);
+
+    dayView.classList.add(direction > 0 ? "slide-out-left" : "slide-out-right");
+
+    setTimeout(async () => {
+
+        await openDay(newKey, day, month - 1, year, dayDiv);
+
+        dayView.classList.remove("slide-out-left", "slide-out-right");
+        dayView.classList.add(direction > 0 ? "slide-in-right" : "slide-in-left");
+
+        setTimeout(() => {
+            dayView.classList.remove("slide-in-right", "slide-in-left");
+        }, 200);
+
+    }, 150);
+
+}
+
+dayView.addEventListener("touchstart", (event) => {
+
+    if (event.touches.length !== 1) return;
+
+    swipeStartX = event.touches[0].clientX;
+    swipeStartY = event.touches[0].clientY;
+    swipeTracking = true;
+
+}, { passive: true });
+
+dayView.addEventListener("touchmove", (event) => {
+
+    if (!swipeTracking || swipeStartX === null) return;
+
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - swipeStartX;
+    const deltaY = touch.clientY - swipeStartY;
+
+    // Si el gesto es claramente horizontal, evitamos que la página
+    // se desplace verticalmente a la vez (para que el swipe sea limpio)
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+        event.preventDefault();
+    }
+
+}, { passive: false });
+
+dayView.addEventListener("touchend", (event) => {
+
+    if (!swipeTracking || swipeStartX === null) return;
+
+    swipeTracking = false;
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - swipeStartX;
+    const deltaY = touch.clientY - swipeStartY;
+
+    swipeStartX = null;
+    swipeStartY = null;
+
+    // Gesto demasiado corto o más vertical que horizontal: se ignora
+    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+
+    // Deslizar a la izquierda -> día siguiente; a la derecha -> día anterior
+    navigateToAdjacentDay(deltaX < 0 ? 1 : -1);
+
+});

@@ -627,3 +627,37 @@ textarea{
   color: var(--accent-dark);
   border-color: var(--accent-dark);
 }
+
+/* -------------------- DESLIZAR ENTRE DÍAS -------------------- */
+
+#day-view {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+#day-view.slide-out-left {
+  transform: translateX(-30px);
+  opacity: 0;
+}
+
+#day-view.slide-out-right {
+  transform: translateX(30px);
+  opacity: 0;
+}
+
+#day-view.slide-in-right {
+  animation: slideInRight 0.2s ease;
+}
+
+#day-view.slide-in-left {
+  animation: slideInLeft 0.2s ease;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
