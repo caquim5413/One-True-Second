@@ -167,8 +167,8 @@ function renderTagChips() {
 
     container.innerHTML = "";
 
-    // Las más usadas primero; en empate, orden alfabético
-    const keys = Object.keys(tagDisplayNames).sort((a, b) => {
+    // Primero identificamos las más usadas
+    const byUsage = Object.keys(tagDisplayNames).sort((a, b) => {
 
         const countA = tagIndex[a] ? tagIndex[a].size : 0;
         const countB = tagIndex[b] ? tagIndex[b].size : 0;
@@ -178,6 +178,15 @@ function renderTagChips() {
         return a.localeCompare(b);
 
     });
+
+    const topKeys = byUsage.slice(0, TAG_CHIPS_DEFAULT_LIMIT);
+
+    // El resto, alfabético
+    const restKeys = byUsage
+        .slice(TAG_CHIPS_DEFAULT_LIMIT)
+        .sort((a, b) => a.localeCompare(b));
+
+    const keys = [...topKeys, ...restKeys];
 
     const visibleKeys = tagChipsExpanded
         ? keys
