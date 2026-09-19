@@ -916,12 +916,23 @@ imageInput.addEventListener("change", async () => {
 
 backButton.addEventListener("click", () => {
 
+    const dayToRestore = activeDayDiv;
+
     dayView.style.display = "none";
     gridView.style.display = "block";
 
     activeDateKey = null;
     activeDayDiv = null;
     activeDayData = null;
+
+    if (dayToRestore) {
+
+        dayToRestore.scrollIntoView({
+            behavior: "auto",
+            block: "center"
+        });
+
+    }
 
 });
 
