@@ -364,6 +364,7 @@ async function openDay(dateKey, day, month, year, dayDiv) {
 
     gridView.style.display = "none";
     dayView.style.display = "block";
+    updateScrubberVisibility();
 
     dayTitle.textContent = `${day} de ${monthNamesLong[month]} de ${year}`;
 
@@ -769,6 +770,7 @@ function goToDate(dateKey) {
     // Si estábamos dentro de un día, volvemos primero al grid
     dayView.style.display = "none";
     gridView.style.display = "block";
+    updateScrubberVisibility();
 
     activeDateKey = null;
     activeDayDiv = null;
@@ -920,7 +922,7 @@ backButton.addEventListener("click", () => {
 
     dayView.style.display = "none";
     gridView.style.display = "block";
-
+    updateScrubberVisibility();
     activeDateKey = null;
     activeDayDiv = null;
     activeDayData = null;
@@ -1530,3 +1532,113 @@ dayView.addEventListener("touchend", (event) => {
     navigateToAdjacentDay(deltaX < 0 ? 1 : -1);
 
 });
+
+// -------------------- BARRA DE DESPLAZAMIENTO RÁPIDO DEL GRID
+
+const scrubber = document.getElementById("scrubber");
+const scrubberThumb = document.getElementById("scrubber-thumb");
+const scrubberLabel = document.getElementById("scrubber-label");
+
+let scrubbing = false;
+
+function updateScrubberVisibility() {
+    scrubber.style.display = (gridView.style.display === "none") ? "none" : "block";
+}
+
+function getScrollableRange() {
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    return Math.max(maxScroll, 1);
+}
+
+function updateThumbFromScroll() {
+
+    if (gridView.style.display === "none") return;
+
+    const maxScroll = getScrollableRange();
+    const ratio = Math.min(Math.max(window.scrollY / maxScroll, 0), 1);
+    const trackHeight = scrubber.clientHeight;
+
+    scrubberThumb.style.top = `${ratio * (trackHeight - 16)}px`;
+
+}
+
+function findLabelForScrollY(targetScrollY) {
+
+    const markers = Array.from(
+        document.querySelectorAll(".year-title, .month-title")
+    );
+
+    let currentLabel = "";
+
+    for (const marker of markers) {
+
+        if (marker.offsetTop <= targetScrollY + 60) {
+            currentLabel = marker.textContent;
+        } else {
+            break;
+        }
+
+    }
+
+    return currentLabel;
+
+}
+
+function handleScrubMove(clientY) {
+
+    const rect = scrubber.getBoundingClientRect();
+    const ratio = Math.min(Math.max((clientY - rect.top) / rect.height, 0), 1);
+
+    const maxScroll = getScrollableRange();
+    const targetScrollY = ratio * maxScroll;
+
+    window.scrollTo({ top: targetScrollY, behavior: "auto" });
+
+    scrubberThumb.style.top = `${ratio * (rect.height - 16)}px`;
+
+    const label = findLabelForScrollY(targetScrollY);
+
+    if (label) {
+
+        scrubberLabel.textContent = label;
+        scrubberLabel.style.display = "block";
+        scrubberLabel.style.top = `${rect.top + ratio * rect.height}px`;
+
+    }
+
+}
+
+scrubber.addEventListener("pointerdown", (event) => {
+
+    if (gridView.style.display === "none") return;
+
+    scrubbing = true;
+    scrubber.setPointerCapture(event.pointerId);
+    handleScrubMove(event.clientY);
+
+});
+
+scrubber.addEventListener("pointermove", (event) => {
+
+    if (!scrubbing) return;
+
+    handleScrubMove(event.clientY);
+
+});
+
+function endScrub() {
+    scrubbing = false;
+    scrubberLabel.style.display = "none";
+}
+
+scrubber.addEventListener("pointerup", endScrub);
+scrubber.addEventListener("pointercancel", endScrub);
+
+window.addEventListener("scroll", () => {
+    if (!scrubbing) updateThumbFromScroll();
+});
+
+window.addEventListener("resize", updateThumbFromScroll);
+
+// Posición inicial
+updateThumbFromScroll();
